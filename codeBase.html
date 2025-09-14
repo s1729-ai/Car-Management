@@ -1,0 +1,1982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CabMate | Corporate Cab Management</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css" />
+  <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="styles.css" />
+  <meta name="description" content="Corporate Cab Management System for scheduling, tracking, and managing cabs across multiple branches" />
+  <style>
+    :root {
+      --spacing-md: 1rem;
+      --spacing-lg: 1.5rem;
+      --spacing-xl: 2rem;
+      
+      /* Border Radius */
+      --radius-sm: 0.25rem;
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --radius-xl: 1rem;
+      
+      /* Shadows */
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    /* Base Styles */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body, html { 
+      height: 100%; 
+      background: var(--bg-color); 
+      color: var(--text-color); 
+      font-family: var(--font-primary);
+      overflow-x: hidden;
+      line-height: 1.5;
+      font-size: 16px;
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+      font-family: var(--font-secondary);
+      font-weight: 600;
+      margin-bottom: var(--spacing-md);
+      color: var(--text-color);
+    }
+    
+    /* Utility Classes */
+    .hidden { display: none !important; }
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .gap-sm { gap: var(--spacing-sm); }
+    .gap-md { gap: var(--spacing-md); }
+    .gap-lg { gap: var(--spacing-lg); }
+    .text-sm { font-size: 0.875rem; }
+    .text-md { font-size: 1rem; }
+    .text-lg { font-size: 1.125rem; }
+    .text-xl { font-size: 1.25rem; }
+    .text-2xl { font-size: 1.5rem; }
+    .font-bold { font-weight: 700; }
+    .text-primary { color: var(--primary); }
+    .text-secondary { color: var(--secondary); }
+    .text-accent { color: var(--accent); }
+    .text-error { color: var(--error); }
+    .text-muted { color: var(--text-muted); }
+    .bg-primary { background-color: var(--primary); }
+    .bg-secondary { background-color: var(--secondary); }
+    .bg-accent { background-color: var(--accent); }
+    .bg-error { background-color: var(--error); }
+    .rounded-sm { border-radius: var(--radius-sm); }
+    .rounded-md { border-radius: var(--radius-md); }
+    .rounded-lg { border-radius: var(--radius-lg); }
+    .rounded-xl { border-radius: var(--radius-xl); }
+    .shadow-sm { box-shadow: var(--shadow-sm); }
+    .shadow-md { box-shadow: var(--shadow-md); }
+    .shadow-lg { box-shadow: var(--shadow-lg); }
+    .shadow-xl { box-shadow: var(--shadow-xl); }
+    .p-sm { padding: var(--spacing-sm); }
+    .p-md { padding: var(--spacing-md); }
+    .p-lg { padding: var(--spacing-lg); }
+    .p-xl { padding: var(--spacing-xl); }
+    .m-sm { margin: var(--spacing-sm); }
+    .m-md { margin: var(--spacing-md); }
+    .m-lg { margin: var(--spacing-lg); }
+    .m-xl { margin: var(--spacing-xl); }
+    .mb-sm { margin-bottom: var(--spacing-sm); }
+    .mb-md { margin-bottom: var(--spacing-md); }
+    .mb-lg { margin-bottom: var(--spacing-lg); }
+    .mb-xl { margin-bottom: var(--spacing-xl); }
+    .w-full { width: 100%; }
+    .h-full { height: 100%; }
+    
+    /* Login Section */
+    .centered { 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      min-height: 100vh; 
+      background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), 
+                url('https://images.unsplash.com/photo-1526045612212-70caf35c14df?auto=format&fit=crop&w=1950&q=80') 
+                no-repeat center center/cover; 
+    }
+    
+    .container { 
+      width: 100%; 
+      max-width: 420px; 
+      background: rgba(255, 255, 255, 0.95); 
+      border-radius: var(--radius-lg); 
+      padding: var(--spacing-xl); 
+      box-shadow: var(--shadow-xl); 
+      backdrop-filter: blur(8px); 
+      color: var(--text-color); 
+      animation: fadeIn 1s ease-out; 
+      position: relative; 
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    #login-form h2 {
+      color: var(--text-color);
+      font-size: 1.75rem;
+      margin-bottom: var(--spacing-lg);
+      text-align: center;
+    }
+    
+    #login-form form {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+    }
+    
+    #login-form input {
+      padding: var(--spacing-md);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      background: white;
+      color: var(--text-color);
+      font-size: 1rem;
+      width: 100%;
+      transition: all 0.3s ease;
+    }
+    
+    #login-form input::placeholder {
+      color: var(--text-muted);
+    }
+    
+    #login-form input:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: rgba(255, 255, 255, 0.15);
+    }
+    
+    #login-form button {
+      padding: var(--spacing-md);
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: var(--spacing-md);
+    }
+    
+    #login-form button:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+    
+    /* Dashboard Layout */
+    .dashboard { 
+      display: none; 
+      height: 100vh; 
+      width: 100%; 
+    }
+    
+    .dashboard-active {
+      display: flex;
+    }
+    
+    .sidebar { 
+      width: 250px; 
+      background-color: var(--sidebar-bg); 
+      color: var(--text-color); 
+      display: flex; 
+      flex-direction: column; 
+      padding-top: var(--spacing-lg);
+      transition: all 0.3s ease;
+      z-index: 10;
+      border-right: 1px solid var(--border-color);
+    }
+    
+    @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        left: -250px;
+        height: 100%;
+        transition: left 0.3s ease;
+      }
+      
+      .sidebar.active {
+        left: 0;
+      }
+    }
+    
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      padding: 0 var(--spacing-lg);
+      margin-bottom: var(--spacing-lg);
+    }
+    
+    .sidebar-header h2 {
+      margin-bottom: 0;
+      font-size: 1.25rem;
+      color: white;
+    }
+    
+    .sidebar-logo {
+      width: 32px;
+      height: 32px;
+      margin-right: var(--spacing-md);
+    }
+    
+    .menu-item { 
+      padding: var(--spacing-md) var(--spacing-lg); 
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      white-space: nowrap; 
+      transition: all 0.2s ease;
+      border-left: 3px solid transparent;
+    }
+    
+    .menu-item i {
+      width: 20px;
+      text-align: center;
+    }
+    
+    .menu-item:hover, .menu-item.active { 
+      background-color: var(--hover-bg); 
+      cursor: pointer; 
+      border-left: 3px solid var(--primary);
+    }
+    
+    .main-content { 
+      flex: 1; 
+      display: flex; 
+      flex-direction: column; 
+      overflow: hidden;
+    }
+    
+    .topbar { 
+      height: 70px; 
+      background: var(--card-bg); 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      padding: 0 var(--spacing-lg); 
+      box-shadow: var(--shadow-sm);
+      border-bottom: 1px solid var(--border-color);
+      z-index: 5;
+    }
+    
+    .topbar-title {
+      font-weight: 600;
+      font-size: 1.25rem;
+    }
+    
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+    }
+    
+    .topbar-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-color);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin: 0;
+    }
+    
+    .topbar-btn:hover {
+      background: var(--bg-color);
+    }
+    
+    .mobile-menu-btn {
+      display: none;
+    }
+    
+    @media (max-width: 768px) {
+      .mobile-menu-btn {
+        display: flex;
+      }
+    }
+    
+    .user {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      cursor: pointer;
+      padding: var(--spacing-sm) var(--spacing-md);
+      border-radius: var(--radius-md);
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    
+    .user:hover {
+      background: var(--bg-color);
+    }
+    
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+    }
+    
+    .dropdown { 
+      display: none; 
+      position: absolute; 
+      right: 0; 
+      top: 100%; 
+      background: var(--card-bg); 
+      border: 1px solid var(--border-color); 
+      border-radius: var(--radius-md); 
+      width: 250px; 
+      z-index: 999; 
+      box-shadow: var(--shadow-lg);
+      margin-top: var(--spacing-sm);
+      overflow: hidden;
+    }
+    
+    .dropdown p { 
+      margin: 0; 
+      padding: var(--spacing-md) var(--spacing-lg); 
+      border-bottom: 1px solid var(--border-color); 
+      font-size: 0.875rem; 
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    
+    .dropdown p:hover {
+      background: var(--bg-color);
+    }
+    
+    .dropdown p:last-child {
+      border-bottom: none;
+    }
+    
+    .content { 
+      flex: 1; 
+      padding: var(--spacing-lg); 
+      overflow-y: auto; 
+    }
+    
+    /* Dashboard Cards */
+    .cards { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); 
+      gap: var(--spacing-lg); 
+      margin-bottom: var(--spacing-xl); 
+    }
+    
+    .card { 
+      background: var(--card-bg); 
+      padding: var(--spacing-lg); 
+      border-radius: var(--radius-lg); 
+      box-shadow: var(--shadow-md); 
+      border: 1px solid var(--border-color);
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-lg);
+    }
+    
+    .card-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: var(--spacing-md);
+      font-size: 1.5rem;
+    }
+    
+    .card-title {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-bottom: var(--spacing-xs);
+    }
+    
+    .card-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: var(--spacing-xs);
+    }
+    
+    .card-change {
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .card-change.positive {
+      color: var(--secondary);
+    }
+    
+    .card-change.negative {
+      color: var(--error);
+    }
+    
+    /* Section Styles */
+    .section { 
+      background: var(--card-bg); 
+      padding: var(--spacing-lg); 
+      border-radius: var(--radius-lg); 
+      box-shadow: var(--shadow-md); 
+      margin-bottom: var(--spacing-lg);
+      border: 1px solid var(--border-color);
+    }
+    
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--spacing-lg);
+    }
+    
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0;
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+    
+    .section-actions {
+      display: flex;
+      gap: var(--spacing-sm);
+    }
+    
+    /* Map Styles */
+    #map { 
+      height: 500px; 
+      border-radius: var(--radius-lg); 
+      margin-top: var(--spacing-md);
+      border: 1px solid var(--border-color);
+    }
+    
+    /* Form Styles */
+    .trip-form { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: var(--spacing-lg); 
+    }
+    
+    @media (max-width: 768px) {
+      .trip-form {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .form-group { 
+      display: flex; 
+      flex-direction: column; 
+      gap: var(--spacing-xs);
+    }
+    
+    .form-group label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+    
+    input, select, textarea { 
+      padding: var(--spacing-md); 
+      border-radius: var(--radius-md); 
+      border: 1px solid var(--border-color); 
+      font-size: 1rem; 
+      background: var(--card-bg);
+      color: var(--text-color);
+      transition: all 0.2s ease;
+    }
+    
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    button { 
+      padding: var(--spacing-md); 
+      border-radius: var(--radius-md); 
+      border: none; 
+      font-size: 1rem; 
+      font-weight: 500;
+      cursor: pointer; 
+      transition: all 0.2s ease;
+    }
+    
+    .btn-primary {
+      background: var(--primary); 
+      color: white; 
+    }
+    
+    .btn-primary:hover { 
+      background: var(--primary-dark); 
+    }
+    
+    .btn-secondary {
+      background: var(--secondary);
+      color: white;
+    }
+    
+    .btn-secondary:hover {
+      background: var(--secondary-dark);
+    }
+    
+    .btn-accent {
+      background: var(--accent);
+      color: white;
+    }
+    
+    .btn-accent:hover {
+      background: var(--accent-dark);
+    }
+    
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+    }
+    
+    .btn-outline:hover {
+      background: var(--bg-color);
+    }
+    
+    /* Responsive Styles */
+    @media (max-width: 1024px) {
+      .cards {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .dashboard.dashboard-active {
+        flex-direction: column;
+      }
+      
+      .sidebar {
+        width: 100%;
+        position: fixed;
+        top: 0;
+        left: -100%;
+        height: 100%;
+        z-index: 1000;
+      }
+      
+      .sidebar.active {
+        left: 0;
+      }
+      
+      .main-content {
+        width: 100%;
+      }
+      
+      .content {
+        padding: var(--spacing-md);
+      }
+      
+      .cards {
+        grid-template-columns: 1fr;
+      }
+    }
+    /* Activity List Styles */
+    .activity-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+    }
+    
+    .activity-item {
+      display: flex;
+      gap: var(--spacing-md);
+      padding: var(--spacing-md);
+      border-radius: var(--radius-md);
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      transition: all 0.2s ease;
+    }
+    
+    .activity-item:hover {
+      transform: translateX(5px);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .activity-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    
+    .activity-content {
+      flex: 1;
+    }
+    
+    .activity-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    
+    .activity-desc {
+      font-size: 0.875rem;
+      margin-bottom: 4px;
+    }
+    
+    .activity-time {
+      font-size: 0.75rem;
+    }
+
+    .activity-status {
+      margin-top: 0.5rem;
+    }
+
+    .badge {
+      padding: 4px 8px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    
+    .badge-success {
+      background: rgba(16, 185, 129, 0.1);
+      color: #10B981;
+    }
+
+    .mt-lg {
+      margin-top: 2rem;
+    }
+    
+    /* Input with Icon Styles */
+    .input-with-icon {
+      position: relative;
+    }
+    
+    .input-with-icon i {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+    }
+    
+    .input-with-icon input,
+    .input-with-icon select,
+    .input-with-icon textarea {
+      padding-left: 40px;
+    }
+    
+    /* Checkbox Styles */
+    .trip-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      cursor: pointer;
+      user-select: none;
+      position: relative;
+      padding-left: 30px;
+    }
+    
+    .checkbox-container input {
+      position: absolute;
+      opacity: 0;
+      cursor: pointer;
+      height: 0;
+      width: 0;
+    }
+    
+    .checkmark {
+      position: absolute;
+      left: 0;
+      height: 20px;
+      width: 20px;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+    }
+    
+    .checkbox-container:hover input ~ .checkmark {
+      background-color: var(--bg-color);
+    }
+    
+    .checkbox-container input:checked ~ .checkmark {
+      background-color: var(--primary);
+      border-color: var(--primary);
+    }
+    
+    .checkmark:after {
+      content: "";
+      position: absolute;
+      display: none;
+    }
+    
+    .checkbox-container input:checked ~ .checkmark:after {
+      display: block;
+    }
+    
+    .checkbox-container .checkmark:after {
+      left: 7px;
+      top: 3px;
+      width: 5px;
+      height: 10px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+    
+    /* Fare Estimate Styles */
+    .fare-estimate {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-lg);
+      border: 1px solid var(--border-color);
+    }
+    
+    .fare-details {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-sm);
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .fare-item {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.875rem;
+    }
+    
+    .fare-total {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 700;
+      padding-top: var(--spacing-sm);
+      margin-top: var(--spacing-sm);
+      border-top: 1px solid var(--border-color);
+    }
+    
+    .vehicle-card {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      padding: var(--spacing-md);
+      background: var(--bg-color);
+      border-radius: var(--radius-md);
+    }
+    
+    .vehicle-image {
+      color: var(--primary);
+    }
+    
+    .vehicle-name {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    
+    .vehicle-specs {
+      display: flex;
+      gap: var(--spacing-md);
+    }
+    
+    /* Rating Styles */
+    .rating {
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .rating-stars {
+      display: flex;
+      gap: var(--spacing-xs);
+    }
+    
+    .rating-star {
+      font-size: 1.5rem;
+      color: var(--border-color);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .rating-star:hover,
+    .rating-star.active {
+      color: #FFD700;
+      transform: scale(1.1);
+    }
+    
+    .rating-star:hover ~ .rating-star {
+      color: var(--border-color);
+    }
+    
+    .mb-sm {
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    .mb-md {
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .w-full {
+      width: 100%;
+    }
+    
+    .bg-primary-light {
+      background-color: rgba(79, 70, 229, 0.1);
+    }
+    
+    .text-primary {
+      color: var(--primary);
+    }
+    
+    .text-muted {
+      color: var(--text-muted);
+    }
+    
+    /* Tracking Styles */
+    .tracking-container {
+      display: flex;
+      gap: var(--spacing-lg);
+      height: 600px;
+    }
+    
+    .tracking-sidebar {
+      width: 300px;
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    .search-box {
+      padding: var(--spacing-md);
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .vehicle-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: var(--spacing-sm);
+    }
+    
+    .vehicle-item {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-md);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .vehicle-item:hover,
+    .vehicle-item.active {
+      background: var(--bg-color);
+    }
+    
+    .vehicle-item.active {
+      border-left: 3px solid var(--primary);
+    }
+    
+    .vehicle-status {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    
+    .vehicle-status.online {
+      background: var(--secondary);
+    }
+    
+    .vehicle-status.offline {
+      background: var(--text-muted);
+    }
+    
+    .vehicle-status.maintenance {
+      background: var(--accent);
+    }
+    
+    .vehicle-info {
+      flex: 1;
+    }
+    
+    .vehicle-actions {
+      display: flex;
+      gap: var(--spacing-xs);
+    }
+    
+    .btn-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .btn-icon:hover {
+      background: var(--bg-color);
+      color: var(--primary);
+    }
+    
+    .tracking-map-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-lg);
+    }
+    
+    #map {
+      flex: 1;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-color);
+      background: #f0f0f0;
+      min-height: 400px;
+    }
+    
+    .tracking-details {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      border: 1px solid var(--border-color);
+    }
+    
+    .tracking-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .badge {
+      padding: 4px 8px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    
+    .badge-success {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--secondary);
+    }
+    
+    .tracking-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-lg);
+    }
+    
+    .info-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    
+    .info-value {
+      font-weight: 500;
+    }
+    
+    .tracking-actions {
+      display: flex;
+      gap: var(--spacing-md);
+    }
+    
+    @media (max-width: 768px) {
+      .tracking-container {
+        flex-direction: column;
+        height: auto;
+      }
+      
+      .tracking-sidebar {
+        width: 100%;
+        height: 300px;
+      }
+    }
+
+    /* Root Variables - Light Theme */
+    :root {
+      --primary: #4F46E5;
+      --primary-dark: #4338CA;
+      --secondary: #10B981;
+      --secondary-dark: #059669;
+      --accent: #F59E0B;
+      --accent-dark: #D97706;
+      --error: #EF4444;
+      --bg-color: #FFFFFF;
+      --text-color: #111827;
+      --text-muted: #6B7280;
+      --card-bg: #F3F4F6;
+      --sidebar-bg: #FFFFFF;
+      --hover-bg: #F3F4F6;
+      --border-color: #E5E7EB;
+      --spacing-xs: 0.5rem;
+      --spacing-sm: 0.75rem;
+      --font-primary: 'Inter', sans-serif;
+      --font-secondary: 'Montserrat', sans-serif;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Login Section -->
+<div id="login-section" class="centered">
+  <div class="container">
+    <lottie-player src="https://lottie.host/2ff7ae0f-459e-4266-81df-bb6b25c0a1d5/Y4Hg4AQf9E.json" background="transparent" speed="1" style="width: 120px; height: 120px;" loop autoplay></lottie-player>
+    <div id="login-form">
+      <h2>CabMate</h2>
+      <form id="loginForm" onsubmit="return handleLogin(event)">
+        <input type="text" placeholder="Username" required />
+        <input type="password" placeholder="Password" required />
+        <button type="submit" class="btn-primary w-full">Login</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Dashboard Section -->
+<div id="dashboard-section" class="dashboard">
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo bg-primary rounded-md flex items-center justify-between">C</div>
+      <h2>CabMate</h2>
+    </div>
+    
+    <div class="menu-item active" onclick="switchSection('dashboard', this)">
+      <i class="fas fa-home"></i>
+      <span>Dashboard</span>
+    </div>
+    <div class="menu-item" onclick="switchSection('book', this)">
+      <i class="fas fa-taxi"></i>
+      <span>Book a Trip</span>
+    </div>
+    <div class="menu-item" onclick="switchSection('tracking', this)">
+      <i class="fas fa-map-marker-alt"></i>
+      <span>Live Tracking</span>
+    </div>
+    <div class="menu-item" onclick="switchSection('schedule', this)">
+      <i class="fas fa-clock"></i>
+      <span>Scheduling</span>
+    </div>
+    <div class="menu-item" onclick="switchSection('reports', this)">
+      <i class="fas fa-chart-bar"></i>
+      <span>Reports</span>
+    </div>
+    <div class="menu-item" onclick="switchSection('feedback', this)">
+      <i class="fas fa-star"></i>
+      <span>Feedback</span>
+    </div>
+    <div class="menu-item" onclick="switchSection('settings', this)">
+      <i class="fas fa-cog"></i>
+      <span>Settings</span>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="flex items-center gap-md">
+        <button class="topbar-btn mobile-menu-btn" onclick="toggleSidebar()">
+          <i class="fas fa-bars"></i>
+        </button>
+        <div class="topbar-title">Corporate Cab Dashboard</div>
+      </div>
+      
+      <div class="topbar-actions">
+        <div class="user" onclick="toggleDropdown()">
+          <div class="user-avatar">T</div>
+          <span class="text-md">TeamX</span>
+          <div id="dropdown" class="dropdown">
+            <p><strong>Sachin Gupta</strong><br>@teamx-tn8xk</p>
+            <p>Login History</p>
+            <p>Sign out</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="content">
+      <div id="dashboard" class="section-section">
+        <div class="section-header">
+          <h2 class="section-title"><i class="fas fa-tachometer-alt text-primary"></i> Dashboard Overview</h2>
+          <div class="section-actions">
+            <button class="btn-outline"><i class="fas fa-download"></i> Export</button>
+            <button class="btn-primary"><i class="fas fa-sync"></i> Refresh</button>
+          </div>
+        </div>
+        
+        <div class="cards">
+          <div class="card">
+            <div class="card-icon bg-primary-light text-primary"><i class="fas fa-route"></i></div>
+            <div class="card-title">Total Trips</div>
+            <div class="card-value">248</div>
+            <div class="card-change positive"><i class="fas fa-arrow-up"></i> 12% from last month</div>
+          </div>
+          <div class="card">
+            <div class="card-icon bg-secondary-light text-secondary"><i class="fas fa-car"></i></div>
+            <div class="card-title">Active Vehicles</div>
+            <div class="card-value">12</div>
+            <div class="card-change positive"><i class="fas fa-arrow-up"></i> 2 new this week</div>
+          </div>
+          <div class="card">
+            <div class="card-icon bg-accent-light text-accent"><i class="fas fa-user"></i></div>
+            <div class="card-title">Total Drivers</div>
+            <div class="card-value">15</div>
+            <div class="card-change positive"><i class="fas fa-arrow-up"></i> 3 new this month</div>
+          </div>
+          <div class="card">
+            <div class="card-icon bg-error-light text-error"><i class="fas fa-dollar-sign"></i></div>
+            <div class="card-title">Monthly Cost</div>
+            <div class="card-value">$12,450</div>
+            <div class="card-change negative"><i class="fas fa-arrow-down"></i> 5% from last month</div>
+          </div>
+        </div>
+        
+        <div class="section">
+          <div class="section-header">
+            <h3 class="section-title"><i class="fas fa-chart-line text-primary"></i> Trip Analytics</h3>
+            <div class="section-actions">
+              <button class="btn-outline">Weekly</button>
+              <button class="btn-outline">Monthly</button>
+              <button class="btn-outline">Yearly</button>
+            </div>
+          </div>
+          <div style="height: 300px; margin-top: 20px;">
+            <canvas id="tripAnalyticsChart"></canvas>
+          </div>
+        </div>
+        
+        <div class="section">
+          <div class="section-header">
+            <h3 class="section-title"><i class="fas fa-history text-primary"></i> Recent Activity</h3>
+            <div class="section-actions">
+              <button class="btn-outline">View All</button>
+            </div>
+          </div>
+          <div class="activity-list">
+            <div class="activity-item">
+              <div class="activity-icon bg-primary"><i class="fas fa-car text-white"></i></div>
+              <div class="activity-content">
+                <div class="activity-title">New trip booked</div>
+                <div class="activity-desc">John Doe booked a trip from Office to Airport</div>
+                <div class="activity-time text-muted">10 minutes ago</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon bg-secondary"><i class="fas fa-check text-white"></i></div>
+              <div class="activity-content">
+                <div class="activity-title">Trip completed</div>
+                <div class="activity-desc">Sarah's trip from Home to Office has been completed</div>
+                <div class="activity-time text-muted">1 hour ago</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon bg-accent"><i class="fas fa-user-plus text-white"></i></div>
+              <div class="activity-content">
+                <div class="activity-title">New driver added</div>
+                <div class="activity-desc">Michael Brown has been added to the driver pool</div>
+                <div class="activity-time text-muted">3 hours ago</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="book" class="section-section" style="display:none;">
+        <div class="section-header">
+          <h2 class="section-title"><i class="fas fa-taxi text-primary"></i> Book a Trip</h2>
+          <div class="section-actions">
+            <button class="btn-outline"><i class="fas fa-clock"></i> Scheduled Trips</button>
+            <button class="btn-outline"><i class="fas fa-history"></i> Recent Bookings</button>
+          </div>
+        </div>
+        
+        <div class="section">
+          <div class="flex" style="gap: var(--spacing-xl); margin-bottom: var(--spacing-lg);">
+            <div style="flex: 1;">
+              <form class="trip-form">
+                <div class="form-group">
+                  <label>Pickup Location</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <input type="text" placeholder="Enter pickup location">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Destination</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-flag"></i>
+                    <input type="text" placeholder="Enter destination">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Date</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-calendar"></i>
+                    <input type="date">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Time</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-clock"></i>
+                    <input type="time">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Vehicle Type</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-car"></i>
+                    <select>
+                      <option>Economy</option>
+                      <option>Standard</option>
+                      <option>Premium</option>
+                      <option>Executive</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Number of Passengers</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-users"></i>
+                    <input type="number" min="1" max="6" value="1">
+                  </div>
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                  <label>Additional Notes</label>
+                  <textarea rows="3" placeholder="Any special requirements?"></textarea>
+                </div>
+                
+                <div class="form-group" style="grid-column: span 2;">
+                  <div class="trip-options">
+                    <label class="checkbox-container">
+                      <input type="checkbox">
+                      <span class="checkmark"></span>
+                      <span>Round Trip</span>
+                    </label>
+                    <label class="checkbox-container">
+                      <input type="checkbox">
+                      <span class="checkmark"></span>
+                      <span>Priority Booking</span>
+                    </label>
+                    <label class="checkbox-container">
+                      <input type="checkbox">
+                      <span class="checkmark"></span>
+                      <span>Send Notifications</span>
+                    </label>
+                  </div>
+                </div>
+                
+                <div class="form-group" style="grid-column: span 2;">
+                  <div class="flex gap-md">
+                    <button type="submit" class="btn-primary w-full" onclick="handleBookingSubmit(event)"><i class="fas fa-check"></i> Book Now</button>
+                    <button type="button" class="btn-outline w-full"><i class="fas fa-save"></i> Save Draft</button>
+                  </div>
+                </div>
+              </form>
+
+              <!-- Booking List Section -->
+              <div id="bookingList" class="mt-lg" style="margin-top: 2rem;">
+                <h3 class="section-title mb-md"><i class="fas fa-list text-primary"></i> Recent Bookings</h3>
+                <div id="bookingItems" class="activity-list">
+                  <!-- Booking items will be added here dynamically -->
+                </div>
+              </div>
+            </div>
+            
+            <div style="flex: 1;">
+              <div class="fare-estimate">
+                <h3 class="mb-md">Fare Estimate</h3>
+                <div class="fare-details">
+                  <div class="fare-item">
+                    <span>Base Fare</span>
+                    <span>$25.00</span>
+                  </div>
+                  <div class="fare-item">
+                    <span>Distance (15 km)</span>
+                    <span>$18.00</span>
+                  </div>
+                  <div class="fare-item">
+                    <span>Time (30 min)</span>
+                    <span>$7.50</span>
+                  </div>
+                  <div class="fare-item">
+                    <span>Service Fee</span>
+                    <span>$2.50</span>
+                  </div>
+                  <div class="fare-total">
+                    <span>Total Estimate</span>
+                    <span>$53.00</span>
+                  </div>
+                </div>
+                <div class="fare-note text-muted text-sm mb-md">
+                  * Final fare may vary based on actual distance and time
+                </div>
+                <div class="vehicle-preview">
+                  <h4 class="mb-sm">Selected Vehicle</h4>
+                  <div class="vehicle-card">
+                    <div class="vehicle-image">
+                      <i class="fas fa-car-side fa-3x"></i>
+                    </div>
+                    <div class="vehicle-details">
+                      <div class="vehicle-name">Standard Sedan</div>
+                      <div class="vehicle-specs text-sm text-muted">
+                        <span><i class="fas fa-user"></i> 4 seats</span>
+                        <span><i class="fas fa-suitcase"></i> 2 bags</span>
+                        <span><i class="fas fa-snowflake"></i> AC</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="route-preview">
+                <h3 class="mb-md">Route Preview</h3>
+                <div id="booking-map" style="height: 200px; border-radius: var(--radius-md); background-color: #f0f0f0;">
+                  <!-- Map will be initialized here -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="tracking" class="section-section" style="display:none;">
+          <div class="section-header">
+            <h2 class="section-title"><i class="fas fa-map-marker-alt text-primary"></i> Live Tracking</h2>
+            <div class="section-actions">
+              <button class="btn-outline"><i class="fas fa-filter"></i> Filter</button>
+              <button class="btn-outline"><i class="fas fa-expand"></i> Full Screen</button>
+              <button class="btn-primary"><i class="fas fa-sync"></i> Refresh</button>
+            </div>
+          </div>
+          
+          <div class="tracking-container">
+            <div class="tracking-sidebar">
+              <div class="search-box">
+                <div class="input-with-icon">
+                  <i class="fas fa-search"></i>
+                  <input type="text" placeholder="Search vehicles or drivers...">
+                </div>
+              </div>
+              
+              <div class="vehicle-list">
+                <div class="vehicle-item active">
+                  <div class="vehicle-status online"></div>
+                  <div class="vehicle-info">
+                    <div class="vehicle-name">Toyota Camry</div>
+                    <div class="vehicle-details text-sm text-muted">
+                      <span>Driver: John Smith</span>
+                      <span>• In Transit</span>
+                    </div>
+                  </div>
+                  <div class="vehicle-actions">
+                    <button class="btn-icon"><i class="fas fa-phone"></i></button>
+                    <button class="btn-icon"><i class="fas fa-info-circle"></i></button>
+                  </div>
+                </div>
+                
+                <div class="vehicle-item">
+                  <div class="vehicle-status online"></div>
+                  <div class="vehicle-info">
+                    <div class="vehicle-name">Honda Accord</div>
+                    <div class="vehicle-details text-sm text-muted">
+                      <span>Driver: Sarah Johnson</span>
+                      <span>• Idle</span>
+                    </div>
+                  </div>
+                  <div class="vehicle-actions">
+                    <button class="btn-icon"><i class="fas fa-phone"></i></button>
+                    <button class="btn-icon"><i class="fas fa-info-circle"></i></button>
+                  </div>
+                </div>
+                
+                <div class="vehicle-item">
+                  <div class="vehicle-status offline"></div>
+                  <div class="vehicle-info">
+                    <div class="vehicle-name">Ford Fusion</div>
+                    <div class="vehicle-details text-sm text-muted">
+                      <span>Driver: Mike Brown</span>
+                      <span>• Offline</span>
+                    </div>
+                  </div>
+                  <div class="vehicle-actions">
+                    <button class="btn-icon"><i class="fas fa-phone"></i></button>
+                    <button class="btn-icon"><i class="fas fa-info-circle"></i></button>
+                  </div>
+                </div>
+                
+                <div class="vehicle-item">
+                  <div class="vehicle-status maintenance"></div>
+                  <div class="vehicle-info">
+                    <div class="vehicle-name">Nissan Altima</div>
+                    <div class="vehicle-details text-sm text-muted">
+                      <span>Driver: N/A</span>
+                      <span>• Maintenance</span>
+                    </div>
+                  </div>
+                  <div class="vehicle-actions">
+                    <button class="btn-icon"><i class="fas fa-wrench"></i></button>
+                    <button class="btn-icon"><i class="fas fa-info-circle"></i></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="tracking-map-container">
+              <div id="map"></div>
+              
+              <div class="tracking-details">
+                <div class="tracking-header">
+                  <h3>Toyota Camry • DL 01 AB 1234</h3>
+                  <span class="badge badge-success">In Transit</span>
+                </div>
+                
+                <div class="tracking-info">
+                  <div class="info-item">
+                    <div class="info-label">Driver</div>
+                    <div class="info-value">John Smith</div>
+                  </div>
+                  <div class="info-item">
+                    <div class="info-label">Current Location</div>
+                    <div class="info-value">MG Road, Bangalore</div>
+                  </div>
+                  <div class="info-item">
+                    <div class="info-label">Destination</div>
+                    <div class="info-value">Electronic City, Bangalore</div>
+                  </div>
+                  <div class="info-item">
+                    <div class="info-label">ETA</div>
+                    <div class="info-value">25 mins</div>
+                  </div>
+                  <div class="info-item">
+                    <div class="info-label">Trip Start</div>
+                    <div class="info-value">10:30 AM</div>
+                  </div>
+                </div>
+                
+                <div class="tracking-actions">
+                  <button class="btn-outline"><i class="fas fa-phone"></i> Call Driver</button>
+                  <button class="btn-outline"><i class="fas fa-comment"></i> Message</button>
+                  <button class="btn-primary"><i class="fas fa-route"></i> View Route</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      <div id="schedule" class="section-section" style="display:none;">
+        <div class="section">
+          <div class="section-header">
+            <h2 class="section-title"><i class="fas fa-clock text-primary"></i> Schedule Management</h2>
+          </div>
+          <form class="trip-form" id="scheduleForm" onsubmit="handleScheduleSubmit(event)">
+            <div class="form-group">
+              <label>Driver Name</label>
+              <div class="input-with-icon">
+                <i class="fas fa-user"></i>
+                <input type="text" placeholder="Enter driver name" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Shift Start</label>
+              <div class="input-with-icon">
+                <i class="fas fa-clock"></i>
+                <input type="time" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Shift End</label>
+              <div class="input-with-icon">
+                <i class="fas fa-clock"></i>
+                <input type="time" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Day</label>
+              <div class="input-with-icon">
+                <i class="fas fa-calendar"></i>
+                <select required>
+                  <option value="Monday">Monday</option>
+                  <option value="Tuesday">Tuesday</option>
+                  <option value="Wednesday">Wednesday</option>
+                  <option value="Thursday">Thursday</option>
+                  <option value="Friday">Friday</option>
+                  <option value="Saturday">Saturday</option>
+                  <option value="Sunday">Sunday</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <button type="submit" class="btn-primary w-full"><i class="fas fa-save"></i> Save Schedule</button>
+            </div>
+          </form>
+
+          <!-- Schedule List Section -->
+          <div id="scheduleList" class="mt-lg">
+            <h3 class="section-title mb-md"><i class="fas fa-list text-primary"></i> Current Schedules</h3>
+            <div id="scheduleItems" class="activity-list">
+              <!-- Schedule items will be added here dynamically -->
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="reports" class="section-section" style="display:none;">
+        <div class="section">
+          <div class="section-header">
+            <h2 class="section-title"><i class="fas fa-chart-bar text-primary"></i> Reports</h2>
+          </div>
+          <form class="trip-form" id="reportForm" onsubmit="handleReportSubmit(event)">
+            <div class="form-group">
+              <label>Report Type</label>
+              <div class="input-with-icon">
+                <i class="fas fa-file-alt"></i>
+                <select required>
+                  <option value="daily">Daily Report</option>
+                  <option value="weekly">Weekly Report</option>
+                  <option value="monthly">Monthly Report</option>
+                  <option value="custom">Custom Report</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Date Range</label>
+              <div class="input-with-icon">
+                <i class="fas fa-calendar"></i>
+                <input type="date" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Categories</label>
+              <div class="trip-options">
+                <label class="checkbox-container">
+                  <input type="checkbox" name="category" value="trips">
+                  <span class="checkmark"></span>
+                  <span>Trips</span>
+                </label>
+                <label class="checkbox-container">
+                  <input type="checkbox" name="category" value="revenue">
+                  <span class="checkmark"></span>
+                  <span>Revenue</span>
+                </label>
+                <label class="checkbox-container">
+                  <input type="checkbox" name="category" value="drivers">
+                  <span class="checkmark"></span>
+                  <span>Drivers</span>
+                </label>
+              </div>
+            </div>
+            <div class="form-group">
+              <button type="submit" class="btn-primary w-full"><i class="fas fa-file-download"></i> Generate Report</button>
+            </div>
+          </form>
+
+          <!-- Reports List Section -->
+          <div id="reportsList" class="mt-lg">
+            <h3 class="section-title mb-md"><i class="fas fa-list text-primary"></i> Generated Reports</h3>
+            <div id="reportItems" class="activity-list">
+              <!-- Report items will be added here dynamically -->
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="feedback" class="section-section" style="display:none;">
+        <div class="section-header">
+          <h2 class="section-title"><i class="fas fa-star text-primary"></i> Feedback & Ratings</h2>
+          <div class="section-actions">
+            <button class="btn-outline"><i class="fas fa-filter"></i> Filter</button>
+            <button class="btn-primary"><i class="fas fa-plus"></i> New Feedback</button>
+          </div>
+        </div>
+        
+        <div class="section">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-lg);">
+            <div>
+              <h3 class="mb-md">Submit Feedback</h3>
+              <form id="feedbackForm">
+                <div class="form-group">
+                  <label>Trip ID</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-hashtag"></i>
+                    <input type="text" placeholder="Enter trip ID">
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label>Rate your experience</label>
+                  <div class="rating">
+                    <div class="rating-stars">
+                      <span class="rating-star" data-value="1"><i class="fas fa-star"></i></span>
+                      <span class="rating-star" data-value="2"><i class="fas fa-star"></i></span>
+                      <span class="rating-star" data-value="3"><i class="fas fa-star"></i></span>
+                      <span class="rating-star" data-value="4"><i class="fas fa-star"></i></span>
+                      <span class="rating-star" data-value="5"><i class="fas fa-star"></i></span>
+                    </div>
+                    <input type="hidden" name="rating" value="">
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label>Comments</label>
+                  <textarea rows="4" placeholder="Share your experience..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                  <label>Areas to rate</label>
+                  <div class="trip-options">
+                    <label class="checkbox-container">
+                      <input type="checkbox" name="area[]" value="driver">
+                      <span class="checkmark"></span>
+                      <span>Driver Behavior</span>
+                    </label>
+                    <label class="checkbox-container">
+                      <input type="checkbox" name="area[]" value="vehicle">
+                      <span class="checkmark"></span>
+                      <span>Vehicle Condition</span>
+                    </label>
+                    <label class="checkbox-container">
+                      <input type="checkbox" name="area[]" value="app">
+                      <span class="checkmark"></span>
+                      <span>App Experience</span>
+                    </label>
+                    <label class="checkbox-container">
+                      <input type="checkbox" name="area[]" value="booking">
+                      <span class="checkmark"></span>
+                      <span>Booking Process</span>
+                    </label>
+                  </div>
+                </div>
+                
+                <button type="submit" class="btn-primary w-full">Submit Feedback</button>
+              </form>
+            </div>
+            
+            <div>
+              <h3 class="mb-md">Recent Feedback</h3>
+              <div class="activity-list">
+                <div class="activity-item">
+                  <div class="activity-icon bg-primary-light text-primary">
+                    <i class="fas fa-star"></i>
+                  </div>
+                  <div class="activity-content">
+                    <div class="activity-title">Trip to Central Park</div>
+                    <div class="activity-desc">
+                      <div class="rating-stars mb-sm">
+                        <span class="rating-star active"><i class="fas fa-star"></i></span>
+                        <span class="rating-star active"><i class="fas fa-star"></i></span>
+                        <span class="rating-star active"><i class="fas fa-star"></i></span>
+                        <span class="rating-star active"><i class="fas fa-star"></i></span>
+                        <span class="rating-star"><i class="fas fa-star"></i></span>
+                      </div>
+                      <p>Great service and punctual driver. Very comfortable ride.</p>
+                    </div>
+                    <div class="activity-time text-muted">2 hours ago</div>
+                  </div>
+                </div>
+                
+                <div class="activity-item">
+                  <div class="activity-icon bg-primary-light text-primary">
+                    <i class="fas fa-star"></i>
+                  </div>
+                  <div class="activity-content">
+                    <div class="activity-title">Airport Transfer</div>
+                    <div class="activity-desc">
+                      <div class="rating-stars mb-sm">
+                        <span class="rating-star active"><i class="fas fa-star"></i></span>
+                        <span class="rating-star active"><i class="fas fa-star"></i></span>
+                        <span class="rating-star active"><i class="fas fa-star"></i></span>
+                        <span class="rating-star"><i class="fas fa-star"></i></span>
+                        <span class="rating-star"><i class="fas fa-star"></i></span>
+                      </div>
+                      <p>Driver was late but the ride was comfortable.</p>
+                    </div>
+                    <div class="activity-time text-muted">Yesterday</div>
+                  </div>
+                </div>
+                
+                <div class="activity-item">
+                  <div class="activity-icon bg-primary-light text-primary">
+                    <i class="fas fa-star"></i>
+                  </div>
+                  <div class="activity-content">
+                    <div class="activity-title">Daily Commute</div>
+                    <div class="activity-desc">
+                      <div class="rating-stars mb-sm">
+                        <span class="rating-star active"><i class="fas fa-star"></i></span>
+                        <span class="rating-star active"><i class="fas fa-star"></i></span>
+                        <span class="rating-star active"><i class="fas fa-star"></i></span>
+                        <span class="rating-star active"><i class="fas fa-star"></i></span>
+                        <span class="rating-star active"><i class="fas fa-star"></i></span>
+                      </div>
+                      <p>Excellent service as always! The driver was very professional.</p>
+                    </div>
+                    <div class="activity-time text-muted">2 days ago</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="settings" class="section-section" style="display:none;"><div class="section"><h3>⚙ Settings</h3><p><button onclick="alert('Change password clicked!')">🔒 Change Password</button></p><p><button onclick="alert('Update clicked!')">⬆️ Update</button></p></div></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+  function handleLogin(event) {
+    event.preventDefault();
+    const loginSection = document.getElementById('login-section');
+    const dashboardSection = document.getElementById('dashboard-section');
+    
+    if (loginSection && dashboardSection) {
+      loginSection.style.display = 'none';
+      dashboardSection.style.display = 'flex';
+      // Initialize charts after dashboard is shown
+      setTimeout(initCharts, 300);
+    }
+    return false;
+  }
+
+  function showDashboard() {
+    document.getElementById('login-section').style.display = 'none';
+    document.getElementById('dashboard-section').style.display = 'flex';
+    // Initialize charts after dashboard is shown
+    setTimeout(initCharts, 300);
+  }
+
+  function toggleDropdown() {
+    const dropdown = document.getElementById('dropdown');
+    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+  }
+
+  function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    // Save preference to localStorage
+    if (document.body.classList.contains('dark-mode')) {
+      localStorage.setItem('darkMode', 'enabled');
+    } else {
+      localStorage.setItem('darkMode', 'disabled');
+    }
+  }
+
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('active');
+  }
+
+  function switchSection(id, el) {
+    document.querySelectorAll('.section-section').forEach(s => s.style.display = 'none');
+    document.getElementById(id).style.display = 'block';
+    document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+    el.classList.add('active');
+    if (id === 'tracking') setTimeout(initMap, 300);
+  }
+
+  let map, marker;
+  function initMap() {
+    if (map) return;
+    map = L.map('map').setView([28.6139, 77.2090], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    marker = L.marker([28.6139, 77.2090]).addTo(map);
+    if (navigator.geolocation) {
+      navigator.geolocation.watchPosition(pos => {
+        const {latitude, longitude} = pos.coords;
+        marker.setLatLng([latitude, longitude]);
+        map.setView([latitude, longitude], 15);
+      });
+    }
+    
+    // Add booking map if exists
+    const bookingMap = document.getElementById('booking-map');
+    if (bookingMap) {
+      const bMap = L.map('booking-map').setView([28.6139, 77.2090], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(bMap);
+      const startMarker = L.marker([28.6139, 77.2090]).addTo(bMap);
+      const endMarker = L.marker([28.6329, 77.2195]).addTo(bMap);
+      const routeLine = L.polyline([[28.6139, 77.2090], [28.6329, 77.2195]], {color: 'var(--primary)'}).addTo(bMap);
+    }
+  }
+  
+  function initCharts() {
+    const tripCtx = document.getElementById('tripAnalyticsChart');
+    if (tripCtx) {
+      new Chart(tripCtx, {
+        type: 'line',
+        data: {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+          datasets: [{
+            label: 'Completed Trips',
+            data: [65, 59, 80, 81, 56, 55],
+            borderColor: 'var(--primary)',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            tension: 0.4,
+            fill: true
+          }, {
+            label: 'Cancelled Trips',
+            data: [28, 48, 40, 19, 36, 27],
+            borderColor: 'var(--accent)',
+            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top',
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+  }
+
+  // Initialize app
+  document.addEventListener('DOMContentLoaded', function() {
+    // Any initialization code can go here
+  });
+
+  window.addEventListener('click', e => {
+    if (!e.target.closest('.user')) document.getElementById('dropdown').style.display = 'none';
+  });
+  
+  // Role-based access control
+  const userRoles = {
+    'admin': ['dashboard', 'book', 'tracking', 'schedule', 'reports', 'settings', 'feedback'],
+    'driver': ['dashboard', 'tracking', 'schedule', 'feedback'],
+    'customer': ['dashboard', 'book', 'tracking', 'feedback']
+  };
+  
+  function setUserRole(role) {
+    // Store the role in localStorage
+    localStorage.setItem('userRole', role);
+    
+    // Show/hide menu items based on role permissions
+    const menuItems = document.querySelectorAll('.menu-item');
+    menuItems.forEach(item => {
+      const sectionId = item.getAttribute('onclick').match(/switchSection\('([^']+)'/);
+      if (sectionId && userRoles[role].includes(sectionId[1])) {
+        item.style.display = 'flex';
+      } else {
+        item.style.display = 'none';
+      }
+    });
+    
+    // Update user info in the UI
+    document.querySelector('.user-avatar').textContent = role.charAt(0).toUpperCase();
+  }
+  
+  // Handle Booking Submission
+  function handleBookingSubmit(event) {
+    event.preventDefault();
+    
+    // Get form values
+    const form = event.target.closest('form');
+    const pickup = form.querySelector('input[placeholder="Enter pickup location"]').value;
+    const destination = form.querySelector('input[placeholder="Enter destination"]').value;
+    const date = form.querySelector('input[type="date"]').value;
+    const time = form.querySelector('input[type="time"]').value;
+    const vehicleType = form.querySelector('select').value;
+    const passengers = form.querySelector('input[type="number"]').value;
+    const notes = form.querySelector('textarea').value;
+    
+    // Create booking item
+    const bookingItem = document.createElement('div');
+    bookingItem.className = 'activity-item';
+    bookingItem.innerHTML = `
+      <div class="activity-icon bg-primary"><i class="fas fa-car text-white"></i></div>
+      <div class="activity-content">
+        <div class="activity-title">New Booking - ${vehicleType}</div>
+        <div class="activity-desc">
+          <p><strong>From:</strong> ${pickup}</p>
+          <p><strong>To:</strong> ${destination}</p>
+          <p><strong>Date & Time:</strong> ${date} ${time}</p>
+          <p><strong>Passengers:</strong> ${passengers}</p>
+          ${notes ? `<p><strong>Notes:</strong> ${notes}</p>` : ''}
+        </div>
+        <div class="activity-time text-muted">Just now</div>
+        <div class="activity-status">
+          <span class="badge badge-success">Booked</span>
+        </div>
+      </div>
+    `;
+    
+    // Add to booking list
+    const bookingItems = document.getElementById('bookingItems');
+    if (bookingItems) {
+      bookingItems.insertBefore(bookingItem, bookingItems.firstChild);
+    }
+    
+    // Reset form
+    form.reset();
+    
+    // Show success message
+    alert('Trip booked successfully!');
+  }
+
+  // Feedback system
+  const feedbackForm = document.getElementById('feedback');
+  if (feedbackForm) {
+    const ratingStars = feedbackForm.querySelectorAll('.rating-star');
+    if (ratingStars.length > 0) {
+      ratingStars.forEach(star => {
+        star.addEventListener('click', function() {
+          const value = this.getAttribute('data-value');
+          
+          // Update visual state
+          ratingStars.forEach(s => {
+            const starValue = parseInt(s.getAttribute('data-value'));
+            if (starValue <= parseInt(value)) {
+              s.classList.add('active');
+            } else {
+              s.classList.remove('active');
+            }
+          });
+        });
+      });
+    }
+  }
+</script>
+</body>
+</html>
